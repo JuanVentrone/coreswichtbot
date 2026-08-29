@@ -1,5 +1,8 @@
 import unittest
 
+import httpx
+
+from bot.api.core_switch import CoreSwitchClient
 from bot.formatters import format_temperature
 
 
@@ -17,6 +20,64 @@ class TemperatureFormattingTests(unittest.TestCase):
         self.assertIn("Temperatura", text)
         self.assertIn("Trafo: <b>52.1</b> °C", text)
         self.assertIn("Ambiente: <b>25.3</b> °C", text)
+
+
+class CoreSwitchClientSwitchCompatibilityTests(unittest.IsolatedAsyncioTestCase):
+    async def test_switch_contactor_retries_lowercase_endpoint(self):
+        client = CoreSwitchClient("http://example.test")
+        seen = []
+
+        class FakeResponse:
+            def __init__(self, payload):
+                self._payload = payload
+
+            def raise_for_status(self):
+                return None
+
+            def json(self):
+                return self._payload
+
+        class FakeTransport:
+            async def post(self, path, json=None):
+                seen.append((path, json))
+                if path == "/switch/c1":
+                    return FakeResponse({"success": True, "message": "ok"})
+                raise httpx.HTTPStatusError("not found", request=httpx.Request("POST", "http://example.test" + path), response=httpx.Response(404, request=httpx.Request("POST", "http://example.test" + path)))
+
+        client._client = FakeTransport()
+
+        result = await client.switch_contactor("C1", True)
+
+        self.assertTrue(result["success"])
+        self.assertTrue(any(path == "/switch/c1" for path, _ in seen))
+
+    async def test_switch_general_retries_compatibility_payload(self):
+        client = CoreSwitchClient("http://example.test")
+        seen = []
+
+        class FakeResponse:
+            def __init__(self, payload):
+                self._payload = payload
+
+            def raise_for_status(self):
+                return None
+
+            def json(self):
+                return self._payload
+
+        class FakeTransport:
+            async def post(self, path, json=None):
+                seen.append((path, json))
+                if path == "/switch/general" and json == {"estado": True}:
+                    return FakeResponse({"success": True, "message": "ok"})
+                raise httpx.HTTPStatusError("not found", request=httpx.Request("POST", "http://example.test" + path), response=httpx.Response(404, request=httpx.Request("POST", "http://example.test" + path)))
+
+        client._client = FakeTransport()
+
+        result = await client.switch_general(True)
+
+        self.assertTrue(result["success"])
+        self.assertTrue(any(path == "/switch/general" and payload == {"estado": True} for path, payload in seen))
 
 
 if __name__ == "__main__":
