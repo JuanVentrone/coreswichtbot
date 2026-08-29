@@ -76,13 +76,14 @@ async def cb_menu_action(callback: CallbackQuery, core_api: CoreSwitchClient) ->
         if action == "status":
             status = await core_api.general_status()
             metrics = await core_api.power_metrics()
-            text = format_general_status(status, metrics)
+            temperature_metrics = await core_api.temperature_metrics()
+            text = format_general_status(status, metrics, temperature_metrics)
         elif action == "voltage":
             text = format_voltage(await core_api.power_metrics())
         elif action == "consumption":
             text = format_consumption(await core_api.power_metrics())
         elif action == "temp":
-            text = format_temperature(await core_api.power_metrics())
+            text = format_temperature(await core_api.temperature_metrics())
         elif action == "ping":
             health = await core_api.health()
             hb = await core_api.heartbeat()

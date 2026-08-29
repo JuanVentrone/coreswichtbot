@@ -44,16 +44,31 @@ def format_consumption(metrics: dict[str, Any]) -> str:
 
 def format_temperature(metrics: dict[str, Any]) -> str:
     data = metrics.get("data") or {}
-    # Core Swicht V2 aún no expone sensor de temperatura del trafo.
-    # Si aparece en metrics, lo mostramos; si no, aviso claro.
-    for key in ("temp_trafo", "temperatura", "temp_c", "temperature"):
+
+    trafo_temp = None
+    for key in ("temperature_c", "temp_trafo", "temperatura", "temp_c", "temperature"):
         if data.get(key) is not None:
-            return f"🌡 <b>Temperatura trafo</b>\n{_num(data.get(key), 1)} °C"
+            trafo_temp = data.get(key)
+            break
+
+    ambient_temp = data.get("ambient_temperature_c")
+    if trafo_temp is None and ambient_temp is None:
+        for key in ("temp_ambiente", "ambient_temp", "ambient_temperature"):
+            if data.get(key) is not None:
+                ambient_temp = data.get(key)
+                break
+
+    if trafo_temp is not None or ambient_temp is not None:
+        lines = ["🌡 <b>Temperatura</b>"]
+        if trafo_temp is not None:
+            lines.append(f"Trafo: <b>{_num(trafo_temp, 1)}</b> °C")
+        if ambient_temp is not None:
+            lines.append(f"Ambiente: <b>{_num(ambient_temp, 1)}</b> °C")
+        return "\n".join(lines)
 
     return (
-        "🌡 <b>Temperatura trafo</b>\n"
-        "Sensor pendiente en Core Swicht V2 "
-        "(igual que en Pain Farm: aún no hay endpoint real)."
+        "🌡 <b>Temperatura</b>\n"
+        "Sin datos del sensor de temperatura disponible."
     )
 
 
@@ -70,7 +85,11 @@ def format_contactors(status: dict[str, Any]) -> str:
     return "\n".join(lines)
 
 
-def format_general_status(status: dict[str, Any], metrics: dict[str, Any]) -> str:
+def format_general_status(
+    status: dict[str, Any],
+    metrics: dict[str, Any],
+    temperature_metrics: dict[str, Any] | None = None,
+) -> str:
     parts = [
         "📋 <b>Estatus general</b>",
         "",
@@ -80,7 +99,7 @@ def format_general_status(status: dict[str, Any], metrics: dict[str, Any]) -> st
         "",
         format_consumption(metrics),
         "",
-        format_temperature(metrics),
+        format_temperature(temperature_metrics or metrics),
     ]
     return "\n".join(parts)
 

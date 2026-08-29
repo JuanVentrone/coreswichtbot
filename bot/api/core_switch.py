@@ -46,6 +46,9 @@ class CoreSwitchClient:
     async def power_metrics(self) -> dict[str, Any]:
         return await self._get("/metrics/power")
 
+    async def temperature_metrics(self) -> dict[str, Any]:
+        return await self._get("/metrics/temperature")
+
     async def switch_general(self, on: bool) -> dict[str, Any]:
         return await self._post("/switch/general", {"estado": on})
 

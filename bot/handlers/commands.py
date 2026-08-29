@@ -129,7 +129,7 @@ async def cmd_consumption(message: Message, core_api: CoreSwitchClient) -> None:
 @router.message(Command("temp", "Temp", "temperatura"))
 async def cmd_temp(message: Message, core_api: CoreSwitchClient) -> None:
     try:
-        metrics = await core_api.power_metrics()
+        metrics = await core_api.temperature_metrics()
         await message.answer(format_temperature(metrics), parse_mode="HTML")
     except Exception as exc:
         logger.exception("temp failed")
@@ -141,8 +141,9 @@ async def cmd_status(message: Message, core_api: CoreSwitchClient) -> None:
     try:
         status = await core_api.general_status()
         metrics = await core_api.power_metrics()
+        temperature_metrics = await core_api.temperature_metrics()
         await message.answer(
-            format_general_status(status, metrics),
+            format_general_status(status, metrics, temperature_metrics),
             parse_mode="HTML",
         )
     except Exception as exc:
