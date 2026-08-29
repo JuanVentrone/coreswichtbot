@@ -3,7 +3,7 @@ import unittest
 import httpx
 
 from bot.api.core_switch import CoreSwitchClient
-from bot.formatters import format_temperature
+from bot.formatters import format_contactors, format_temperature
 
 
 class TemperatureFormattingTests(unittest.TestCase):
@@ -20,6 +20,21 @@ class TemperatureFormattingTests(unittest.TestCase):
         self.assertIn("Temperatura", text)
         self.assertIn("Trafo: <b>52.1</b> °C", text)
         self.assertIn("Ambiente: <b>25.3</b> °C", text)
+
+    def test_contactors_normalize_boolean_and_unknown_states(self):
+        status = {
+            "C1": {"name": "C1", "state": True},
+            "C2": {"name": "C2", "state": False},
+            "C3": {"name": "C3", "state": "desconocido"},
+        }
+
+        text = format_contactors(status)
+        self.assertIn("🟢 C1", text)
+        self.assertIn("<b>ON</b>", text)
+        self.assertIn("🔴 C2", text)
+        self.assertIn("<b>OFF</b>", text)
+        self.assertIn("⚪ C3", text)
+        self.assertIn("<b>UNKNOWN</b>", text)
 
 
 class CoreSwitchClientSwitchCompatibilityTests(unittest.IsolatedAsyncioTestCase):

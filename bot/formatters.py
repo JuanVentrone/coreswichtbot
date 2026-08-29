@@ -72,11 +72,36 @@ def format_temperature(metrics: dict[str, Any]) -> str:
     )
 
 
+def _normalize_contactor_state(value: Any) -> str:
+    if isinstance(value, bool):
+        return "ON" if value else "OFF"
+
+    if isinstance(value, str):
+        normalized = value.strip().upper()
+        if normalized in {"ON", "TRUE", "1", "ENCENDIDO", "ACTIVO"}:
+            return "ON"
+        if normalized in {"OFF", "FALSE", "0", "APAGADO", "INACTIVO"}:
+            return "OFF"
+        if normalized in {"UNKNOWN", "DESCONOCIDO", "UNDEFINED", "NULL", "NONE"}:
+            return "UNKNOWN"
+        return normalized if normalized else "UNKNOWN"
+
+    if value is None:
+        return "UNKNOWN"
+
+    if int(value) == 1:
+        return "ON"
+    if int(value) == 0:
+        return "OFF"
+
+    return "UNKNOWN"
+
+
 def format_contactors(status: dict[str, Any]) -> str:
     lines = ["📊 <b>Contactores</b>"]
     for key in ("C1", "C2", "C3"):
         entry = status.get(key) or {}
-        state = entry.get("state", "UNKNOWN")
+        state = _normalize_contactor_state(entry.get("state", "UNKNOWN"))
         name = entry.get("name", key)
         icon = "🟢" if state == "ON" else "🔴" if state == "OFF" else "⚪"
         lines.append(f"{icon} {key} ({name}): <b>{state}</b>")
