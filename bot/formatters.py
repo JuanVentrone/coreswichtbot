@@ -97,10 +97,20 @@ def _normalize_contactor_state(value: Any) -> str:
     return "UNKNOWN"
 
 
+def _extract_contactors(status: dict[str, Any]) -> dict[str, Any]:
+    """Extrae el dict de contactores aceptando formatos plano o anidado."""
+    if not isinstance(status, dict):
+        return {}
+    if "contactors" in status and isinstance(status["contactors"], dict):
+        return status["contactors"]
+    return status
+
+
 def format_contactors(status: dict[str, Any]) -> str:
+    contactors = _extract_contactors(status)
     lines = ["📊 <b>Contactores</b>"]
     for key in ("C1", "C2", "C3"):
-        entry = status.get(key) or {}
+        entry = contactors.get(key) or {}
         state = _normalize_contactor_state(entry.get("state", "UNKNOWN"))
         name = entry.get("name", key)
         icon = "🟢" if state == "ON" else "🔴" if state == "OFF" else "⚪"

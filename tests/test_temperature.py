@@ -36,6 +36,22 @@ class TemperatureFormattingTests(unittest.TestCase):
         self.assertIn("⚪ C3", text)
         self.assertIn("<b>UNKNOWN</b>", text)
 
+    def test_contactors_handles_api_nested_contactors_key(self):
+        """La API real devuelve {contactors: {C1, C2, C3}}."""
+        status = {
+            "contactors": {
+                "C1": {"name": "Contactor 1", "state": "ON"},
+                "C2": {"name": "Contactor 2", "state": "OFF"},
+                "C3": {"name": "Contactor 3", "state": "UNKNOWN", "error": "Offline"},
+            }
+        }
+
+        text = format_contactors(status)
+        self.assertIn("🟢 C1 (Contactor 1): <b>ON</b>", text)
+        self.assertIn("🔴 C2 (Contactor 2): <b>OFF</b>", text)
+        self.assertIn("⚪ C3 (Contactor 3): <b>UNKNOWN</b>", text)
+        self.assertIn("⚠ Offline", text)
+
 
 class CoreSwitchClientSwitchCompatibilityTests(unittest.IsolatedAsyncioTestCase):
     async def test_switch_contactor_retries_lowercase_endpoint(self):
